@@ -99,6 +99,13 @@ async function run() {
         res.send({ result,token });
       })
 
+      app.get('/expenseall',async(req,res)=>{
+        const query = {}
+            const cursor = expenseListCollection.find(query);
+            const expenseall = await cursor.toArray();
+            res.send(expenseall)
+      })
+
        app.get('/expenselist', verifyJWT,  async(req, res) =>{
         const email = req.query.empoyeeEmail;
         const decodedEmail=req.decoded.email;
