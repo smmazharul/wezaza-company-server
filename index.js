@@ -106,6 +106,8 @@ async function run() {
             res.send(expenseall)
       })
 
+     
+
        app.get('/expenselist', verifyJWT,  async(req, res) =>{
         const email = req.query.empoyeeEmail;
         const decodedEmail=req.decoded.email;
@@ -117,6 +119,14 @@ async function run() {
         else {
           return res.status(403).send({ message: 'forbidden access' });
         }
+      })
+      
+       app.get('/expenselist/expense', async(req, res) =>{
+        const email = req.query.empoyeeEmail;
+          const query = { empoyeeEmail: email };
+          const expenselist = await expenseListCollection.find(query).toArray();
+          return res.send(expenselist);
+        
       })
 
 
