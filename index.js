@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 
@@ -37,6 +37,7 @@ async function run() {
         await client.connect();
         const expenseCollection = client.db('wezaza_company').collection('expense');
         const expenseListCollection = client.db('wezaza_company').collection('expenselist');
+        const depositCollection = client.db('wezaza_company').collection('depositamount');
         const usersCollection = client.db('wezaza_company').collection('users');
         
        
@@ -86,6 +87,7 @@ async function run() {
     
         })
 
+        //update user
        app.put('/user/:email', async (req, res) => {
         const email = req.params.email;
         const user = req.body;
@@ -99,6 +101,25 @@ async function run() {
         res.send({ result,token });
       })
 
+      // update my expense
+      app.put('/dashboard/myexpense/:id', async (req, res) => {
+        const id = req.params.id;
+        const updateExpense = req.body;
+        const filter = { _id: ObjectId(id)};
+        const options = { upsert: true };
+        const updateDoc = {
+          $set: {
+            itemName: updateExpense.itemName,
+            specialNote: updateExpense.specialNote,
+            usnitCost: updateExpense.usnitCost,
+            quantity: updateExpense.quantity,
+          }
+        };
+        const result = await expenseListCollection.updateOne(filter, updateDoc, options);
+        res.send({ result });
+      })
+
+      // get all user expense 
       app.get('/expenseall',async(req,res)=>{
         const query = {}
             const cursor = expenseListCollection.find(query);
@@ -107,7 +128,7 @@ async function run() {
       })
 
      
-
+    // get user expense list  who has login 
        app.get('/expenselist', verifyJWT,  async(req, res) =>{
         const email = req.query.empoyeeEmail;
         const decodedEmail=req.decoded.email;
@@ -120,7 +141,22 @@ async function run() {
           return res.status(403).send({ message: 'forbidden access' });
         }
       })
+
+      // get user deposit amount who has login 
+       app.get('/depositamount', verifyJWT,  async(req, res) =>{
+        const email = req.query.empoyeeEmail;
+        const decodedEmail=req.decoded.email;
+        if (email === decodedEmail) {
+          const query = { empoyeeEmail: email };
+          const depositamount = await depositCollection.find(query).toArray();
+          return res.send(depositamount);
+        }
+        else {
+          return res.status(403).send({ message: 'forbidden access' });
+        }
+      })
       
+      // get specific user expense  data for admin 
        app.get('/expenselist/expense', async(req, res) =>{
         const email = req.query.empoyeeEmail;
           const query = { empoyeeEmail: email };
@@ -130,10 +166,18 @@ async function run() {
       })
 
 
+      // expense post 
 
         app.post('/expenselist', async (req, res) => {
             const expenselist = req.body;
             const result = expenseListCollection.insertOne(expenselist);
+            res.send(result)
+        })
+
+        // deposit money post 
+        app.post('/depositamount', async (req, res) => {
+            const depositamount = req.body;
+            const result = depositCollection.insertOne(depositamount);
             res.send(result)
         })
 
