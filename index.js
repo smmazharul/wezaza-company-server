@@ -1,11 +1,11 @@
 const express = require('express')
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-
 require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { MongoClient, ServerApiVersion } = require('mongodb');
+const ObjectId = require('mongodb').ObjectId;
 
 
 
@@ -36,9 +36,12 @@ async function run() {
     try {
         await client.connect();
         const expenseCollection = client.db('wezaza_company').collection('expense');
+        const landCatagoryCollection = client.db('wezaza_company').collection('landCatagory');
         const expenseListCollection = client.db('wezaza_company').collection('expenselist');
         const depositCollection = client.db('wezaza_company').collection('depositamount');
         const usersCollection = client.db('wezaza_company').collection('users');
+        const salesCollections = client.db('wezaza_company').collection('salesCollection');
+        const chemicalProductsCollection = client.db('wezaza_company').collection('chemicalProducts');
         
        
         
@@ -48,6 +51,23 @@ async function run() {
             const expenses = await cursor.toArray();
             res.send(expenses)
         });
+
+
+        app.get('/landCatagory', async (req, res) => {
+            const query = {}
+            const cursor = landCatagoryCollection.find(query);
+            const landCatagory = await cursor.toArray();
+            res.send(landCatagory)
+        });
+
+         app.get('/landCatagory/:id', async(req, res) =>{
+        const id = req.params.id;
+          const query = { _id: ObjectId(id)};
+          const landCatagory = await landCatagoryCollection.findOne(query);
+          return res.send(landCatagory);
+        
+      })
+     
          /* 
         * ApI Naming Convention
        *app.get('/expense') get all expense in this collection
@@ -127,6 +147,29 @@ async function run() {
             res.send(expenseall)
       })
 
+      // get all sales details 
+      app.get('/sales',async(req,res)=>{
+        const query = {}
+            const cursor = salesCollections.find(query);
+            const allSales = await cursor.toArray();
+            res.send(allSales)
+      })
+      // get all sales details 
+      app.get('/chemicalProducts',async(req,res)=>{
+        const query = {}
+            const cursor = chemicalProductsCollection.find(query);
+            const allChemicalProducts = await cursor.toArray();
+            res.send(allChemicalProducts)
+      })
+      app.get('/chemicalProducts/:id', async(req, res) =>{
+        const id = req.params.id;
+          const query = { _id: ObjectId(id)};
+          const chemicalProductslist = await chemicalProductsCollection.findOne(query);
+          return res.send(chemicalProductslist);
+        
+      })
+
+
      
     // get user expense list  who has login 
        app.get('/expenselist', verifyJWT,  async(req, res) =>{
@@ -141,6 +184,17 @@ async function run() {
           return res.status(403).send({ message: 'forbidden access' });
         }
       })
+
+      // myexpense delete
+      app.delete('/expenselist/:id', async(req, res) =>{
+        const id = req.params.id;
+        const query = {_id: ObjectId(id)};
+        const result = await expenseListCollection.deleteOne(query);
+        res.send(result);
+    })
+
+
+
 
       // get user deposit amount who has login 
        app.get('/depositamount', verifyJWT,  async(req, res) =>{
@@ -178,6 +232,19 @@ async function run() {
         app.post('/depositamount', async (req, res) => {
             const depositamount = req.body;
             const result = depositCollection.insertOne(depositamount);
+            res.send(result)
+        })
+        // chemical Product list  post 
+        app.post('/chemicalProducts', async (req, res) => {
+            const chemicalProducts = req.body;
+            const result = chemicalProductsCollection.insertOne(chemicalProducts);
+            res.send(result)
+        })
+
+        //  sales money post 
+        app.post('/sales', async (req, res) => {
+            const sales = req.body;
+            const result = salesCollections.insertOne(sales);
             res.send(result)
         })
 
